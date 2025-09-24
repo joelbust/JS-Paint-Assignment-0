@@ -46,7 +46,7 @@ Filters.fillFilter = function( image, color ) {
   for (var x = 0; x < image.width; x++) {
     for (var y = 0; y < image.height; y++) {
       // uncomment this line to enable this function
-      // image.setPixel(x, y, color);
+      image.setPixel(x, y, color);
     }
   }
   return image;
@@ -55,14 +55,21 @@ Filters.fillFilter = function( image, color ) {
 // At each center, draw a solid circle with the specified radius and color
 Filters.brushFilter = function( image, radius, color, vertsString ) {
   // centers is an array of (x, y) coordinates that each defines a circle center
-  var centers = stringToCoords(vertsString);
+  var centers = stringToCoords(vertsString), r2 = radius * radius;
 
-  // draw a filled circle centered at every location in centers[].
-  // radius and color are specified in function arguments.
-  // ----------- STUDENT CODE BEGIN ------------
-  // ----------- Our reference solution uses 10 lines of code.
+  if (typeof color === "string") color = new Pixel(color);
+
+  for (var k = 0; k < centers.length; k++) {
+    var cx = centers[k][0], cy = centers[k][1];
+    for (var y = Math.max(0, cy - radius); y <= Math.min(image.height - 1, cy + radius); y++) {
+      for (var x = Math.max(0, cx - radius); x <= Math.min(image.width - 1, cx + radius); x++) {
+        var dx = x - cx, dy = y - cy;
+        if (dx*dx + dy*dy <= r2) image.setPixel(x, y, color);
+      }
+    }
+  }
   // ----------- STUDENT CODE END ------------
-  Gui.alertOnce ('brushFilter is not implemented yet');
+  //Gui.alertOnce ('brushFilter is not implemented yet');
 
   return image;
 };
@@ -79,18 +86,49 @@ Filters.softBrushFilter = function( image, radius, color, alpha_at_center, verts
   // the opacity decreases linearly along the radius and becomes zero at the edge of the circle
   // radius and color are specified in function arguments.
   // ----------- STUDENT CODE BEGIN ------------
-  // ----------- Our reference solution uses 21 lines of code.
+  if (typeof color === "string") color = new Pixel(color);
+  var r = Math.max(0, radius);
+
+  for (var k = 0; k < centers.length; k++) {
+    var cx = centers[k][0], cy = centers[k][1];
+    for (var y = Math.max(0, cy - r); y <= Math.min(image.height - 1, cy + r); y++) {
+      for (var x = Math.max(0, cx - r); x <= Math.min(image.width - 1, cx + r); x++) {
+        var dx = x - cx, dy = y - cy, d = Math.sqrt(dx*dx + dy*dy);
+        if (d <= r) {
+          var a = alphaCenter * (1 - d / r);
+          var src = image.getPixel(x, y);
+          var out = src.multipliedBy(1 - a).plus(color.multipliedBy(a));
+          out.a = src.a;            
+          image.setPixel(x, y, out);
+        }
+      }
+    }
+  }
   // ----------- STUDENT CODE END ------------
-  Gui.alertOnce ('softBrushFilter is not implemented yet');
+  //Gui.alertOnce ('softBrushFilter is not implemented yet');
 
   return image;
 };
 
-Filters.customFilter = function( image, value ) {
+Filters.softFill = function( image, color, opacity ) {
   // You can use this filter to do whatever you want
   // ----------- STUDENT CODE BEGIN ------------
-  // ----------- Our reference solution uses 0 lines of code.
+  if (typeof color === "string") {
+    color = new Pixel(color);
+  }
+  var a = Math.max(0, Math.min(1, Number(opacity) || 0)); // clamp 0..1
+  if (!a) return image;
+
+  for (var y = 0; y < image.height; y++) {
+    for (var x = 0; x < image.width; x++) {
+      var src = image.getPixel(x, y);
+      // out = src*(1 - a) + color*a
+      var out = src.multipliedBy(1 - a).plus(color.multipliedBy(a));
+      out.a = src.a; // leave per-pixel alpha unchanged
+      image.setPixel(x, y, out);
+    }
+  }
   // ----------- STUDENT CODE END ------------
-  Gui.alertOnce ('customFilter is not implemented yet');
+  //Gui.alertOnce ('customFilter is not implemented yet');
   return image;
 };

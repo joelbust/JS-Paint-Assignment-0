@@ -118,16 +118,20 @@ GuiConfig.filterDefs = [
   },
 
   {
-    name: "CustomFilter",
-    funcName: "customFilter",
+    name: "Soft Fill",
+    funcName: "softFill",
     folderName: undefined,
     canAnimate: true,
     paramDefs: [
       {
-        name: "input value",
-        defaultVal: 0.5,
-        sliderRange: [0, 1],
-        isFloat: true,
+        name: "color",
+        defaultVal: [0, 0, 0],
+        isColor: true,
+      },
+      { name: "Opacity",               
+        defaultVal: 0.5, 
+        sliderRange: [0, 1], 
+        isFloat: true 
       },
     ]
   },
