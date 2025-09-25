@@ -55,20 +55,27 @@ Filters.fillFilter = function( image, color ) {
 // At each center, draw a solid circle with the specified radius and color
 Filters.brushFilter = function( image, radius, color, vertsString ) {
   // centers is an array of (x, y) coordinates that each defines a circle center
-  var centers = stringToCoords(vertsString), r2 = radius * radius;
+  if (!(color instanceof Pixel)) {
+    if (typeof color === "string") color = new Pixel(color);
+    else if (Array.isArray(color)) color = new Pixel(color[0], color[1], color[2], (color[3] ?? 1), "rgb");
+    else color = new Pixel(0,0,0,1,"rgb");
+  }
 
-  if (typeof color === "string") color = new Pixel(color);
+  var centers = stringToCoords(vertsString);
+  var r = Math.max(0, radius|0), r2 = r*r;
 
-  for (var k = 0; k < centers.length; k++) {
-    var cx = centers[k][0], cy = centers[k][1];
-    for (var y = Math.max(0, cy - radius); y <= Math.min(image.height - 1, cy + radius); y++) {
-      for (var x = Math.max(0, cx - radius); x <= Math.min(image.width - 1, cx + radius); x++) {
-        var dx = x - cx, dy = y - cy;
-        if (dx*dx + dy*dy <= r2) image.setPixel(x, y, color);
+  for (let i = 0; i < centers.length; i++) {
+    let c = centers[i], cx = (Array.isArray(c)? c[0] : c.x), cy = (Array.isArray(c)? c[1] : c.y);
+    let x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(image.width  - 1, Math.ceil(cx + r));
+    let y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(image.height - 1, Math.ceil(cy + r));
+    for (let y = y0; y <= y1; y++) {
+      let dy = y - cy;
+      for (let x = x0; x <= x1; x++) {
+        let dx = x - cx;
+        if (dx*dx + dy*dy <= r2) image.setPixel(x, y, color);  // solid overwrite
       }
     }
   }
-  // ----------- STUDENT CODE END ------------
   //Gui.alertOnce ('brushFilter is not implemented yet');
 
   return image;
@@ -86,20 +93,33 @@ Filters.softBrushFilter = function( image, radius, color, alpha_at_center, verts
   // the opacity decreases linearly along the radius and becomes zero at the edge of the circle
   // radius and color are specified in function arguments.
   // ----------- STUDENT CODE BEGIN ------------
-  if (typeof color === "string") color = new Pixel(color);
-  var r = Math.max(0, radius);
+  if (!(color instanceof Pixel)) {
+    if (typeof color === "string") color = new Pixel(color);
+    else if (Array.isArray(color)) color = new Pixel(color[0], color[1], color[2], (color[3] ?? 1), "rgb");
+    else color = new Pixel(0,0,0,1,"rgb");
+  }
 
-  for (var k = 0; k < centers.length; k++) {
-    var cx = centers[k][0], cy = centers[k][1];
-    for (var y = Math.max(0, cy - r); y <= Math.min(image.height - 1, cy + r); y++) {
-      for (var x = Math.max(0, cx - r); x <= Math.min(image.width - 1, cx + r); x++) {
-        var dx = x - cx, dy = y - cy, d = Math.sqrt(dx*dx + dy*dy);
-        if (d <= r) {
-          var a = alphaCenter * (1 - d / r);
-          var src = image.getPixel(x, y);
-          var out = src.multipliedBy(1 - a).plus(color.multipliedBy(a));
-          out.a = src.a;            
-          image.setPixel(x, y, out);
+  var r = Math.max(0, +radius || 0); if (!r) return image;
+  var a0 = Math.max(0, Math.min(1, +alpha_at_center || 0));
+  var paintA = Math.max(0, Math.min(1, (color.a != null ? color.a : 1)));
+
+  for (let i = 0; i < centers.length; i++) {
+    let c = centers[i], cx = (Array.isArray(c)? c[0] : c.x), cy = (Array.isArray(c)? c[1] : c.y);
+    let x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(image.width  - 1, Math.ceil(cx + r));
+    let y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(image.height - 1, Math.ceil(cy + r));
+    for (let y = y0; y <= y1; y++) {
+      let dy = y - cy;
+      for (let x = x0; x <= x1; x++) {
+        let dx = x - cx, d2 = dx*dx + dy*dy;
+        if (d2 <= r*r) {
+          let a = a0 * (1 - Math.sqrt(d2)/r) * paintA;
+          if (a > 0) {
+            let src = image.getPixel(x, y);
+            let out = src.multipliedBy(1 - a).plus(color.multipliedBy(a));
+            out.a = src.a;     // leave alpha channel unchanged
+            out.clamp();
+            image.setPixel(x, y, out);
+          }
         }
       }
     }
