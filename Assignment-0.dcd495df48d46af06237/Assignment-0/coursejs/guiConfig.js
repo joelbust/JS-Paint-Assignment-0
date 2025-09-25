@@ -121,7 +121,6 @@ GuiConfig.filterDefs = [
     name: "Soft Fill",
     funcName: "softFill",
     folderName: undefined,
-    canAnimate: true,
     paramDefs: [
       {
         name: "color",

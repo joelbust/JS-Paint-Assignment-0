@@ -64,6 +64,7 @@ Filters.brushFilter = function( image, radius, color, vertsString ) {
   var centers = stringToCoords(vertsString);
   var r = Math.max(0, radius|0), r2 = r*r;
 
+  //loop for center and radius, test if pixel inside
   for (let i = 0; i < centers.length; i++) {
     let c = centers[i], cx = (Array.isArray(c)? c[0] : c.x), cy = (Array.isArray(c)? c[1] : c.y);
     let x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(image.width  - 1, Math.ceil(cx + r));
@@ -98,11 +99,13 @@ Filters.softBrushFilter = function( image, radius, color, alpha_at_center, verts
     else if (Array.isArray(color)) color = new Pixel(color[0], color[1], color[2], (color[3] ?? 1), "rgb");
     else color = new Pixel(0,0,0,1,"rgb");
   }
+  
 
   var r = Math.max(0, +radius || 0); if (!r) return image;
   var a0 = Math.max(0, Math.min(1, +alpha_at_center || 0));
   var paintA = Math.max(0, Math.min(1, (color.a != null ? color.a : 1)));
 
+  //loop to test and then blend pixels
   for (let i = 0; i < centers.length; i++) {
     let c = centers[i], cx = (Array.isArray(c)? c[0] : c.x), cy = (Array.isArray(c)? c[1] : c.y);
     let x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(image.width  - 1, Math.ceil(cx + r));
@@ -133,6 +136,7 @@ Filters.softBrushFilter = function( image, radius, color, alpha_at_center, verts
 Filters.softFill = function( image, color, opacity ) {
   // You can use this filter to do whatever you want
   // ----------- STUDENT CODE BEGIN ------------
+  //fill with opacity
   if (typeof color === "string") {
     color = new Pixel(color);
   }
